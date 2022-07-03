@@ -6,10 +6,12 @@ import settings
 
 
 class ZabbixNBN:
-    HOST_STATUS_ENABLE = '0'
-    HOST_STATUS_DISABLE = '1'
 
-    zapi = ZabbixAPI(settings.ZABBIX_URL, user=settings.ZABBIX_USER, password=settings.ZABBIX_PASS)
+    def __init__(self):
+        self.zapi = ZabbixAPI(settings.ZABBIX_URL, user=settings.ZABBIX_USER, password=settings.ZABBIX_PASS)
+
+        self.HOST_STATUS_ENABLE = '0'
+        self.HOST_STATUS_DISABLE = '1'
 
     def create_host(self, hostname: str, ip: str, groupid: int, templateids: list):
         groups = [{'groupid': groupid}, {'groupid': settings.GROUP_NB_SYNC}]
@@ -33,9 +35,8 @@ class ZabbixNBN:
                 host=hostname,
                 name=hostname,
                 groups=groups,
-                templates=templates,
+                templates=templateids,
                 interfaces=interfaces,
-                description=description,
             )
         except ZabbixAPIException as e:
             data = e.args[0]

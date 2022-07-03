@@ -88,7 +88,11 @@ def update_host(host: Devices):
 
 if __name__ == '__main__':
     nb = pynetbox.api(settings.NB_URL, settings.NB_API_TOKEN)
-    z = ZabbixNBN()
+    try:
+        z = ZabbixNBN()
+    except Exception as e:
+        logger.error(e)
+        quit(1)
 
     # For real life code
     nb_hosts = get_nb_hosts()
