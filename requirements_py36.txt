@@ -1,0 +1,13 @@
+aiocontextvars==0.2.2
+certifi==2022.6.15
+charset-normalizer==2.0.12
+contextvars==2.4
+idna==3.3
+immutables==0.18
+loguru==0.6.0
+py-zabbix==1.1.7
+pynetbox==6.6.2
+requests==2.27.1
+six==1.16.0
+typing_extensions==4.1.1
+urllib3==1.26.9
