@@ -3,6 +3,7 @@ import typing
 from pyzabbix.api import ZabbixAPI, ZabbixAPIException
 
 import settings
+from loguru import logger
 
 
 class ZabbixNBN:
@@ -40,7 +41,8 @@ class ZabbixNBN:
             )
         except ZabbixAPIException as e:
             data = e.args[0]
-            print(f"Zabbix error while creating host {hostname}: {data['message']} {data['data']}")
+            logger.error(f"Zabbix error while creating host {hostname}: {data['message']} {data['data']}")
+            raise
 
     def close(self):
         self.zapi.user.logout()

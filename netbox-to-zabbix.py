@@ -22,6 +22,7 @@ def get_nb_hosts() -> typing.List:
     for c in settings.NB_MONITORING_CFS:
         devs = nb.dcim.devices.filter(status='active', cf_monitoring_class=c)
         all_devices.extend(devs)
+    logger.debug(f'{len(all_devices)} found')
     return all_devices
 
 
@@ -44,6 +45,7 @@ def update_host(host: Devices):
         logger.error(f'{host.name} has no Management primary IPv4')
         return
 
+    logger.debug(f'Processing {host.name}')
     ip = host.primary_ip4.address.split('/')[0]
     group_id = settings.CF_TO_GROUP[cf]
     template_ids = settings.CF_TO_TEMPLATES[cf]
@@ -63,7 +65,7 @@ def update_host(host: Devices):
         z.update_host_status(z_host_id, z.HOST_STATUS_ENABLE)
         z.replace_host_template(z_host_id, template_ids)
         z.replace_host_group(z_host_id, group_id)
-
+        logger.debug(f'{host.name} updated')
     else:
         z_host_ifaces_with_ip = z.get_host_ifaces_by_ip(ip)
 
@@ -80,6 +82,7 @@ def update_host(host: Devices):
             z.update_host_status(z_host_id, z.HOST_STATUS_ENABLE)
             z.replace_host_template(z_host_id, template_ids)
             z.replace_host_group(z_host_id, group_id)
+            logger.debug(f'{host.name} updated')
 
         elif len(z_host_ifaces_with_ip) > 1:
             logger.warning(f'> 2 hosts in zabbix with the same IP. {z_host_ifaces_with_ip}')
