@@ -12,9 +12,7 @@ class ZabbixNBN:
     zapi = ZabbixAPI(settings.ZABBIX_URL, user=settings.ZABBIX_USER, password=settings.ZABBIX_PASS)
 
     def create_host(self, hostname: str, ip: str, groupid: int, templateids: list):
-        description = 'Generated automatically'
-        groups = [{'groupid': groupid}]
-        templates = templateids
+        groups = [{'groupid': groupid}, {'groupid': settings.GROUP_NB_SYNC}]
         interfaces = [
             {
                 'ip': ip,
@@ -64,7 +62,10 @@ class ZabbixNBN:
         self.zapi.host.update(hostid=host_id, templates=host_template_ids)
 
     def replace_host_group(self, host_id: str, host_group_id: str):
-        self.zapi.host.update(hostid=host_id, groups=[{'groupid': host_group_id}])
+        self.zapi.host.update(
+            hostid=host_id,
+            groups=[{'groupid': host_group_id}, {'groupid': settings.GROUP_NB_SYNC}]
+        )
 
     def update_host_name(self, host_id: str, hostname: str):
         self.zapi.host.update(hostid=host_id, host=hostname, name='')
