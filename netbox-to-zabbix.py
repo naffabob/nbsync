@@ -101,4 +101,13 @@ if __name__ == '__main__':
     for nb_host in nb_hosts:
         update_host(nb_host)
 
+    # Disable not actual hosts in zabbix
+    nb_hostnames = {dev.name for dev in nb_hosts}
+    zabbix_hosts = z.get_hosts_by_group(settings.GROUP_NBSYNC_ID)
+    for z_host in zabbix_hosts:
+        hostname = z_host['host']
+        z_host_id = z_host['hostid']
+        if hostname not in nb_hostnames:
+            z.update_host_status(z_host_id, z.HOST_STATUS_DISABLE)
+            logger.warning(f'{hostname} does not exists in Netbox. Was disabled in Zabbix.')
     z.close()
