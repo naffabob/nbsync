@@ -72,7 +72,6 @@ def update_host(host: Devices):
         if len(z_host_ifaces_with_ip) == 0:
             z.create_host(host.name, ip, group_id, template_ids)
             logger.info(f'Created host {host.name}')
-            return
 
         elif len(z_host_ifaces_with_ip) == 1:
             z_host_id = z.get_host_id_from_host_ifaces(z_host_ifaces_with_ip)
@@ -86,7 +85,6 @@ def update_host(host: Devices):
 
         elif len(z_host_ifaces_with_ip) > 1:
             logger.warning(f'> 2 hosts in zabbix with the same IP. {z_host_ifaces_with_ip}')
-            return
 
 
 if __name__ == '__main__':

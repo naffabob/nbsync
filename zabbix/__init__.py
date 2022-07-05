@@ -1,9 +1,9 @@
 import typing
 
+from loguru import logger
 from pyzabbix.api import ZabbixAPI, ZabbixAPIException
 
 import settings
-from loguru import logger
 
 
 class ZabbixNBN:
@@ -15,7 +15,7 @@ class ZabbixNBN:
         self.HOST_STATUS_DISABLE = '1'
 
     def create_host(self, hostname: str, ip: str, groupid: int, templateids: list):
-        groups = [{'groupid': groupid}, {'groupid': settings.GROUP_NB_SYNC}]
+        groups = [{'groupid': groupid}, {'groupid': settings.GROUP_NBSYNC_ID}]
         interfaces = [
             {
                 'ip': ip,
@@ -67,7 +67,7 @@ class ZabbixNBN:
     def replace_host_group(self, host_id: str, host_group_id: str):
         self.zapi.host.update(
             hostid=host_id,
-            groups=[{'groupid': host_group_id}, {'groupid': settings.GROUP_NB_SYNC}]
+            groups=[{'groupid': host_group_id}, {'groupid': settings.GROUP_NBSYNC_ID}]
         )
 
     def update_host_name(self, host_id: str, hostname: str):
@@ -96,9 +96,5 @@ class ZabbixNBN:
     def get_host_id_from_host_ifaces(self, zabbix_host_ifaces: list) -> str:
         return zabbix_host_ifaces[0]['hostid']
 
-    def get_hostnames_by_group(self, groups: list) -> typing.List[str]:
-        # Get active hosts from custom groups
-        hosts = self.zapi.host.get(groupids=groups)
-        hostnames = [host['host'] for host in hosts
-                     if host['status'] == self.HOST_STATUS_ENABLE]
-        return hostnames
+    def get_hosts_by_group(self, group: int) -> typing.List[dict]:
+        return self.zapi.host.get(output=['host'], groupids=[group])
