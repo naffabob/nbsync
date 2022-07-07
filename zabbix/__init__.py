@@ -14,6 +14,30 @@ class ZabbixNBN:
         self.HOST_STATUS_ENABLE = '0'
         self.HOST_STATUS_DISABLE = '1'
 
+    def get_hosts(self) -> typing.List[dict]:
+        hosts = self.zapi.host.get(
+            groupids=[settings.GROUP_NBSYNC_ID],
+            output=['host', 'status'],
+            selectGroups="groupid",
+            selectParentTemplates='templateid',
+            selectInterfaces='extend'
+        )
+        return hosts
+
+    def get_hosts_by_ip(self, ip: str) -> typing.List[dict]:
+        hostids = {
+            host['hostid'] for host
+            in self.zapi.hostinterface.get(filter={'ip': ip}, output=['hostid'])
+        }
+        hosts = self.zapi.host.get(
+            hostids=list(hostids),
+            output=['host', 'status'],
+            selectGroups="groupid",
+            selectParentTemplates='templateid',
+            selectInterfaces='extend',
+        )
+        return hosts
+
     def create_host(self, hostname: str, ip: str, groupid: int, templateids: list):
         groups = [{'groupid': groupid}, {'groupid': settings.GROUP_NBSYNC_ID}]
         interfaces = [
@@ -47,9 +71,9 @@ class ZabbixNBN:
     def close(self):
         self.zapi.user.logout()
 
-    def update_host_interface(self, host_iface_id: str, ip: str):
+    def update_host_interface(self, host_iface: dict, ip: str):
         self.zapi.hostinterface.update(
-            interfaceid=host_iface_id,
+            interfaceid=host_iface['interfaceid'],
             type=2,
             ip=ip,
             dns='',
@@ -57,44 +81,24 @@ class ZabbixNBN:
             details={'version': '2', 'bulk': '1', 'community': settings.COMMUNITY},
         )
 
-    def delete_host_interface(self, host_ifaces):
-        host_iface_id = host_ifaces[0]['interfaceid']
-        self.zapi.hostinterface.delete([host_iface_id])
+    def delete_host_interface(self, host_iface):
+        host_iface_id = host_iface['interfaceid']
+        self.zapi.hostinterface.delete(host_iface_id)
 
-    def replace_host_template(self, host_id: str, host_template_ids: list):
-        self.zapi.host.update(hostid=host_id, templates=host_template_ids)
+    def replace_host_template(self, host: dict, host_template_ids: list):
+        self.zapi.host.update(hostid=host['hostid'], templates=host_template_ids)
 
-    def replace_host_group(self, host_id: str, host_group_id: str):
+    def replace_host_group(self, host: dict, host_group_id: str):
         self.zapi.host.update(
-            hostid=host_id,
+            hostid=host['hostid'],
             groups=[{'groupid': host_group_id}, {'groupid': settings.GROUP_NBSYNC_ID}]
         )
 
-    def update_host_name(self, host_id: str, hostname: str):
-        self.zapi.host.update(hostid=host_id, host=hostname, name='')
+    def update_host_name(self, host: dict, hostname: str):
+        self.zapi.host.update(hostid=host['hostid'], host=hostname, name=hostname)
 
-    def update_host_status(self, host_id: str, status: str):
-        self.zapi.host.update(hostid=host_id, status=status)
-
-    def get_host_ifaces_by_ip(self, ip: str) -> list:
-        return self.zapi.hostinterface.get(filter={'ip': ip})
-
-    def get_iface_ids_by_host_id(self, host_id: str) -> list:
-        ifaces_list = self.zapi.hostinterface.get(filter={'hostid': host_id})
-        iface_ids_list = []
-        for iface in ifaces_list:
-            iface_ids_list.append(iface['interfaceid'])
-        return iface_ids_list
-
-    def get_host_id_by_hostname(self, hostname: str) -> typing.Optional[str]:
-        host = self.zapi.host.get(filter={'host': hostname})
-        if host:
-            host_id = host[0]['hostid']
-            return host_id
-        return None
-
-    def get_host_id_from_host_ifaces(self, zabbix_host_ifaces: list) -> str:
-        return zabbix_host_ifaces[0]['hostid']
-
-    def get_hosts_by_group(self, group: int) -> typing.List[dict]:
-        return self.zapi.host.get(output=['host'], groupids=[group])
+    def update_host_status(self, host: dict, status: str):
+        ex_status = host['status']
+        if ex_status == status:
+            return
+        self.zapi.host.update(hostid=host['hostid'], status=status)
