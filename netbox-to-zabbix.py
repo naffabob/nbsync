@@ -11,7 +11,7 @@ logger.add(
     settings.LOG_FILE,
     level=settings.LOG_LEVEL,
     format="{time} {level} {message}",
-    rotation="10 KB",
+    rotation="10 MB",
     compression="zip",
 )
 
@@ -19,7 +19,7 @@ logger.add(
 def get_nb_hosts() -> typing.List[Devices]:
     # Get active hosts with monitoring class field
     all_devices = []
-    for c in settings.NB_MONITORING_CFS:
+    for c in settings.CF_MAP.keys():
         devs = nb.dcim.devices.filter(status='active', cf_monitoring_class=c)
         all_devices.extend(devs)
     logger.debug(f'{len(all_devices)} hosts found in Netbox')
@@ -29,16 +29,8 @@ def get_nb_hosts() -> typing.List[Devices]:
 def update_or_create_host(nbhost: Devices, zhost: typing.Optional[dict]):
     cf = nbhost.custom_fields.get('monitoring_class')
 
-    if cf not in settings.NB_MONITORING_CFS:
+    if cf not in settings.CF_MAP:
         logger.error(f'{nbhost.name} has no correct Custom field')
-        return
-
-    if cf not in settings.CF_TO_GROUP:
-        logger.error(f'No Zabbix Group for Custom field {cf}')
-        return
-
-    if cf not in settings.CF_TO_TEMPLATES:
-        logger.error(f'No Zabbix Template for Custom field {cf}')
         return
 
     if nbhost.primary_ip4 is None:
@@ -47,8 +39,8 @@ def update_or_create_host(nbhost: Devices, zhost: typing.Optional[dict]):
 
     logger.debug(f'Processing {nbhost.name}')
     ip = nbhost.primary_ip4.address.split('/')[0]
-    group_id = settings.CF_TO_GROUP[cf]
-    template_ids = settings.CF_TO_TEMPLATES[cf]
+    group_ids = settings.CF_MAP[cf]['groups']
+    template_ids = settings.CF_MAP[cf]['templates']
 
     if zhost:
         for iface in zhost['interfaces'][1:]:
@@ -58,19 +50,18 @@ def update_or_create_host(nbhost: Devices, zhost: typing.Optional[dict]):
 
         z.update_host_status(zhost, z.HOST_STATUS_ENABLE)
         z.replace_host_template(zhost, template_ids)
-        z.replace_host_group(zhost, group_id)
+        z.replace_host_group(zhost, group_ids)
 
     else:
         zhosts = z.get_hosts_by_ip(ip)
 
         if len(zhosts) == 0:
-            z.create_host(nbhost.name, ip, group_id, template_ids)
-            logger.info(f'Created host {nbhost.name}')
+            z.create_host(nbhost.name, ip, group_ids, template_ids)
 
         elif len(zhosts) == 1:
             zhost = zhosts[0]
 
-            z.update_host_name(zhost, nbhost.name)
+            z.update_hostname(zhost, nbhost.name)
 
             for iface in zhost['interfaces'][1:]:
                 z.delete_host_interface(iface)
@@ -78,8 +69,7 @@ def update_or_create_host(nbhost: Devices, zhost: typing.Optional[dict]):
 
             z.update_host_status(zhost, z.HOST_STATUS_ENABLE)
             z.replace_host_template(zhost, template_ids)
-            z.replace_host_group(zhost, group_id)
-            logger.debug(f"{zhost['host']} updated")
+            z.replace_host_group(zhost, group_ids)
 
         elif len(zhosts) > 2:
             logger.warning(f"> 2 interfaces in zabbix with the same IP: {ip}")
@@ -113,4 +103,5 @@ if __name__ == '__main__':
         if hostname not in nb_hostnames:
             z.update_host_status(zhost, z.HOST_STATUS_DISABLE)
             logger.info(f'{hostname} does not exists in Netbox. Was disabled in Zabbix.')
+
     z.close()
