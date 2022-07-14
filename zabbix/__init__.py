@@ -10,7 +10,6 @@ class ZabbixNBN:
 
     def __init__(self):
         self.zapi = ZabbixAPI(settings.ZABBIX_URL, user=settings.ZABBIX_USER, password=settings.ZABBIX_PASS)
-
         self.HOST_STATUS_ENABLE = '0'
         self.HOST_STATUS_DISABLE = '1'
 
@@ -156,14 +155,15 @@ class ZabbixNBN:
             self.zapi.host.update(hostid=host['hostid'], groups=[{'groupid': x} for x in target_groups])
             logger.info(f"{name} groups replaced {host_groups} > {target_groups}")
 
-    def update_hostname(self, host: dict, hostname: str):
+    def update_hostname(self, host: dict, new_name: str):
         old_name = host['host']
-        if hostname == old_name:
+        if new_name == old_name:
             return
 
         if settings.DONT_ASK or input(f"{old_name} update hostname. Confirm? y/n: ") == 'y':
-            self.zapi.host.update(hostid=host['hostid'], host=hostname)
-            logger.info(f"{old_name} hostname updated {old_name} > {hostname}")
+            self.zapi.host.update(hostid=host['hostid'], host=new_name)
+            host['host'] = new_name
+            logger.info(f"{old_name} hostname updated {old_name} > {new_name}")
 
     def update_host_status(self, host: dict, status: str):
         if status == host['status']:

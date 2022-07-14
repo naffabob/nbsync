@@ -26,7 +26,7 @@ def get_nb_hosts() -> typing.List[Devices]:
     return all_devices
 
 
-def update_or_create_host(nbhost: Devices, zhost: typing.Optional[dict]):
+def update_or_create_host(nbhost: Devices, zhost: typing.Optional[dict], z):
     cf = nbhost.custom_fields.get('monitoring_class')
 
     if cf not in settings.CF_MAP:
@@ -98,10 +98,10 @@ if __name__ == '__main__':
 
     for nb_host in nb_hosts:
         zhost = zhosts_map.get(nb_host.name)
-        update_or_create_host(nb_host, zhost)
+        update_or_create_host(nb_host, zhost, z)
 
     # Disable not actual hosts in zabbix
-    nb_hostnames = {dev.name for dev in nb_hosts}
+    nb_hostnames = {dev.name for dev in get_nb_hosts()}
     for zhost in z.get_hosts():
         hostname = zhost['host']
         if hostname not in nb_hostnames:
