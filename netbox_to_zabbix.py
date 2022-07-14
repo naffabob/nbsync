@@ -48,7 +48,11 @@ def update_or_create_host(nbhost: Devices, zhost: typing.Optional[dict]):
 
         z.update_host_interface(zhost['interfaces'][0], ip)
 
-        z.update_host_status(zhost, z.HOST_STATUS_ENABLE)
+        if nbhost.status.value == 'active':
+            zhost_status = z.HOST_STATUS_ENABLE
+        else:
+            zhost_status = z.HOST_STATUS_DISABLE
+        z.update_host_status(zhost, zhost_status)
         z.replace_host_template(zhost, template_ids)
         z.replace_host_group(zhost, group_ids)
 

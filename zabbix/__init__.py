@@ -38,6 +38,21 @@ class ZabbixNBN:
         )
         return hosts
 
+    def get_host_by_name(self, name: str) -> typing.Optional[dict]:
+        hosts = self.zapi.host.get(
+            filter={'host': name},
+            output=['host', 'status'],
+            selectGroups="groupid",
+            selectParentTemplates='templateid',
+            selectInterfaces='extend',
+        )
+        if len(hosts) > 1:
+            raise Exception
+        elif len(hosts) == 1:
+            return hosts[0]
+        elif len(hosts) == 0:
+            return None
+
     def create_host(self, hostname: str, ip: str, groupids: typing.List[int], templateids: typing.List[int]):
         target_groups = set(groupids)
         target_groups.add(settings.GROUP_NBSYNC_ID)
