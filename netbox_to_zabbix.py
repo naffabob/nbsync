@@ -106,6 +106,5 @@ if __name__ == '__main__':
         hostname = zhost['host']
         if hostname not in nb_hostnames:
             z.update_host_status(zhost, z.HOST_STATUS_DISABLE)
-            logger.info(f'{hostname} does not exists in Netbox. Was disabled in Zabbix.')
 
     z.close()
