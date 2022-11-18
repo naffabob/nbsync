@@ -173,3 +173,17 @@ class ZabbixNBN:
         if settings.DONT_ASK or input(f"{name} status update {host['status']} > {status}. Confirm? y/n: ") == 'y':
             self.zapi.host.update(hostid=host['hostid'], status=status)
             logger.info(f"{name} status updated {host['status']} > {status}")
+
+    def update_host(
+            self,
+            host: dict,
+            host_template_ids: typing.List[int],
+            group_ids: typing.List[int],
+            new_name: str,
+            status: str
+    ):
+        self.replace_host_template(host, host_template_ids)
+        self.replace_host_group(host, group_ids)
+        self.update_hostname(host, new_name)
+        self.update_host_status(host, status)
+
