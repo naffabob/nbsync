@@ -3,6 +3,7 @@ import typing
 import pynetbox
 from loguru import logger
 from pynetbox.models.dcim import Devices
+from requests.exceptions import ConnectionError
 
 import settings
 from zabbix import ZabbixNBN
@@ -80,11 +81,6 @@ def update_or_create_host(nbhost: Devices, zhost: typing.Optional[dict], z):
 
 
 if __name__ == '__main__':
-    try:
-        nb = pynetbox.api(settings.NB_URL, settings.NB_API_TOKEN)
-    except Exception as e:
-        logger.error(e)
-        quit(1)
 
     try:
         z = ZabbixNBN()
@@ -94,7 +90,13 @@ if __name__ == '__main__':
 
     zhosts_map = {zhost['host']: zhost for zhost in z.get_hosts()}
 
-    nb_hosts = get_nb_hosts()
+    nb = pynetbox.api(settings.NB_URL, settings.NB_API_TOKEN)
+
+    try:
+        nb_hosts = get_nb_hosts()
+    except ConnectionError as e:
+        logger.error(e.args[0])
+        quit(1)
 
     for nb_host in nb_hosts:
         zhost = zhosts_map.get(nb_host.name)
